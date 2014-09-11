@@ -358,7 +358,10 @@ namespace MarkdownSharp
             Setup();
 
             text = Normalize(text);
-            
+
+            //Supports of Code fence (```lang [Code-Block] ```)
+            text = DoCodeFences(text);
+
             text = HashHTMLBlocks(text);
             text = StripLinkDefinitions(text);
             text = RunBlockGamut(text);
@@ -367,6 +370,19 @@ namespace MarkdownSharp
             Cleanup();
 
             return text + "\n";
+        }
+
+        private string DoCodeFences(string text)
+        {
+            var reg = new Regex(@"```(?<type>\w*)\n(?<code>.+?)```", RegexOptions.Singleline);
+            return reg.Replace(text, match => string.Format(@"<pre><code class=""{0}"">{1}</code></pre>",
+                EncodeAsHtml(match.Groups["type"].Value),
+                EncodeAsHtml(match.Groups["code"].Value)));
+        }
+
+        private string EncodeAsHtml(string text)
+        {
+            return text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
         }
 
         /// <summary>

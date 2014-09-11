@@ -13,7 +13,9 @@ function Start-Markdown
     Param(
         # Markdownテキストファイルのパス
         [Parameter(Mandatory=$true)]
-        [string]$Path
+        [string]$Path,
+        # スタイルシート名。 HighlightJSで使用可能なスタイル名(.cssは含まない)を指定します。
+        [string]$StyleSheet = 'default'
     )
 
     # HTMLテンプレート
@@ -22,10 +24,13 @@ function Start-Markdown
 <!DOCTYPE html>
 <html>
     <head>
+        <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.2/styles/{0}.min.css">
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.2/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
         <title>Markdown Preview</title>
     </head>
     <body>
-    {0}
+    {1}
     </body>
 </html>
 '@
@@ -34,10 +39,9 @@ function Start-Markdown
     {
         new-item $Path -ItemType file -Force
     }
-    
     $sourceDir = Split-Path (Get-ChildItem $Path).FullName -Parent
     $previewDir = "$scriptDir\Html"
-    if(-not(Test-Path $previewDir -PathType Container))
+    if(-not(Test-Path $previewDir))
     {
         New-Item $previewDir -ItemType directory
     }
@@ -55,7 +59,7 @@ function Start-Markdown
     $ie.ToolBar = $false
     
     $rawText = Get-Content $Path -raw
-    $html -f $markdown.Transform($rawText) | Out-File $previewPath -Encoding utf8
+    $html -f $StyleSheet, $markdown.Transform($rawText) | Out-File $previewPath -Encoding utf8
     
     $ie.Navigate($previewPath)
     $ie.Visible = $true
@@ -76,7 +80,7 @@ function Start-Markdown
         if(-not $result.TimedOut)
         {
             $rawText = Get-Content $Path -raw
-            $html -f $markdown.Transform($rawText) | Out-File $previewPath -Encoding utf8
+            $html -f $StyleSheet, $markdown.Transform($rawText) | Out-File $previewPath -Encoding utf8
             $ie.Refresh()
         }
         Start-Sleep -Milliseconds 100
